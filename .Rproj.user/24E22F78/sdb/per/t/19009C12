@@ -1,0 +1,18 @@
+{
+    "contents" : "#Setup a fake time series\nset.seed(1)\nlibrary(lubridate)\nindex <- ISOdatetime(2010,1,1,0,0,0)+1:8759*60*60\nmonth <- month(index)\nhour <- hour(index)\nusage <- 1000+10*rnorm(length(index))-25*(month-6)^2-(hour-12)^2\nusage <- ts(usage,frequency=24)\n\n#Create monthly dummies.  Add other xvars to this matrix\nxreg <- model.matrix(~as.factor(month))[,2:12]\ncolnames(xreg) <- c('Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec')\n\n#Fit a model\nlibrary(forecast)\nmodel <- Arima(usage, order=c(0,0,0), seasonal=list(order=c(1,0,0), period=24), xreg=xreg)\nplot(usage)\npoints(fitted(model),col=2)\nsummary(model)\n\n#Benchmark against other models\nmodel2 <- tslm(usage ~ as.factor(month)+as.factor(hour))\nmodel3 <- tslm(usage~as.factor(month))\nmodel4 <- rep(mean(usage),length(usage))\nmodel5 <- tslm(usage ~ trend + season)\nmodel6 <- tslm(usage ~ trend + season + as.factor(month)+as.factor(hour))\n\nplot(usage)\npoints(model6$fitted.values, col=2)\n\nacf(model6$residuals, lag.max=120)\npacf(model6$residuals, lag.max=120)\n\n#Compare the 4 models\nlibrary(plyr) #for rbind.fill\nACC <- rbind.fill(  data.frame(t(accuracy(model))),\n                    data.frame(t(accuracy(model2))),\n                    data.frame(t(accuracy(model3))),\n                    data.frame(t(accuracy(model5))),\n                    data.frame(t(accuracy(model6))),\n                    data.frame(t(accuracy(model4,usage)))\n)\naccuracy(model)\n\nACC <- round(ACC,2)\nACC <- cbind(Type=c('Arima','LM1','Monthly Mean','Mean'),ACC)\nACC[order(ACC$MAE),]\n",
+    "created" : 1433316803405.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1525802630",
+    "id" : "19009C12",
+    "lastKnownWriteTime" : 1431904182,
+    "path" : "/home/sergey/R_WalMart/forecast_dummy_seasonals.R",
+    "project_path" : "forecast_dummy_seasonals.R",
+    "properties" : {
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "type" : "r_source"
+}
